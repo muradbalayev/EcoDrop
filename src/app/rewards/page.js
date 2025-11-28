@@ -3,41 +3,51 @@ import { useState, useEffect } from "react";
 import { Coins, TrendingUp, Gift, Sparkles, Star, Target, Zap, Award, X } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { rewards } from "@/data/mockData";
+import { getUserData, getMissions, updateUserData } from "@/utils/storage";
+import { rewards as mockRewards } from "@/data/mockData";
 
 export default function RewardsPage() {
+  const [userData, setUserData] = useState(null);
+  const [missions, setMissions] = useState([]);
   const [animatedCoins, setAnimatedCoins] = useState(0);
   const [selectedReward, setSelectedReward] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Animated coin counter on mount
   useEffect(() => {
+    const data = getUserData();
+    if (data) {
+      setUserData(data);
+      animateCoins(data.ecoCoins);
+    }
+    setMissions(getMissions());
+
+    const handleUpdate = (e) => {
+      if (e.detail) {
+        setUserData(e.detail);
+        animateCoins(e.detail.ecoCoins);
+      }
+    };
+    window.addEventListener('userDataUpdated', handleUpdate);
+    return () => window.removeEventListener('userDataUpdated', handleUpdate);
+  }, []);
+
+  const animateCoins = (target) => {
     let start = 0;
-    const end = rewards.currentCoins;
     const duration = 2000;
-    const increment = end / (duration / 16);
+    const increment = target / (duration / 16);
 
     const timer = setInterval(() => {
       start += increment;
-      if (start >= end) {
-        setAnimatedCoins(end);
+      if (start >= target) {
+        setAnimatedCoins(target);
         clearInterval(timer);
       } else {
         setAnimatedCoins(Math.floor(start));
       }
     }, 16);
+  };
 
-    return () => clearInterval(timer);
-  }, []);
-
-  // Weekly missions data
-  const missions = [
-    { id: 1, title: "Scan 5 items today", progress: 3, target: 5, reward: 15, icon: "📱" },
-    { id: 2, title: "Try all material types", progress: 2, target: 4, reward: 20, icon: "🎯" },
-    { id: 3, title: "Scan in 3 locations", progress: 2, target: 3, reward: 10, icon: "📍" },
-  ];
-
-  // Recent activity
+  // Recent activity (mock for now, could be real later)
   const recentActivity = [
     { id: 1, action: "Scanned Plastic bottle", coins: 10, time: "2 min ago", icon: "♻️" },
     { id: 2, action: "Daily streak bonus", coins: 5, time: "1 hour ago", icon: "🔥" },
@@ -45,18 +55,23 @@ export default function RewardsPage() {
   ];
 
   const handleRewardClick = (reward) => {
-    if (reward.available && rewards.currentCoins >= reward.coins) {
+    if (userData && reward.available && userData.ecoCoins >= reward.coins) {
       setSelectedReward(reward);
     }
   };
 
   const handleRedeem = () => {
-    setShowConfetti(true);
-    setTimeout(() => {
-      setShowConfetti(false);
-      setSelectedReward(null);
-    }, 3000);
+    if (userData && selectedReward) {
+      updateUserData({ ecoCoins: userData.ecoCoins - selectedReward.coins });
+      setShowConfetti(true);
+      setTimeout(() => {
+        setShowConfetti(false);
+        setSelectedReward(null);
+      }, 3000);
+    }
   };
+
+  if (!userData) return null;
 
   return (
     <div className="min-h-screen max-w-sm mx-auto pb-20" style={{ background: 'linear-gradient(180deg, #F4F9F4 0%, #FFFFFF 100%)' }}>
@@ -162,7 +177,7 @@ export default function RewardsPage() {
           
           <div className="mb-5">
             <p className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              {rewards.last7Days.drops} drops
+              {mockRewards.last7Days.drops} drops
             </p>
             <p className="text-sm text-gray-500 mt-1">Keep up the great work!</p>
           </div>
@@ -171,16 +186,16 @@ export default function RewardsPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600 font-medium">Progress to next reward</span>
               <span className="font-bold text-gray-900">
-                {rewards.nextReward.current}/{rewards.nextReward.target}
+                {mockRewards.nextReward.current}/{mockRewards.nextReward.target}
               </span>
             </div>
             <div className="relative w-full bg-gray-100 rounded-full h-3 overflow-hidden">
               <div
                 className="absolute inset-0 bg-gradient-to-r from-[#34C759] to-[#2FB350] rounded-full transition-all duration-1000 shadow-sm"
-                style={{ width: `${rewards.nextReward.progress}%` }}
+                style={{ width: `${mockRewards.nextReward.progress}%` }}
               ></div>
             </div>
-            <p className="text-xs text-gray-500">Just {rewards.nextReward.target - rewards.nextReward.current} more coins to unlock!</p>
+            <p className="text-xs text-gray-500">Just {mockRewards.nextReward.target - mockRewards.nextReward.current} more coins to unlock!</p>
           </div>
         </div>
 
@@ -220,12 +235,12 @@ export default function RewardsPage() {
             <Star size={16} className="text-amber-500" />
           </div>
           <div className="space-y-3">
-            {rewards.available.map((reward, index) => (
+            {mockRewards.available.map((reward, index) => (
               <div
                 key={reward.id}
                 onClick={() => handleRewardClick(reward)}
                 className={`bg-white rounded-2xl p-5 shadow-sm transition-all duration-300 border cursor-pointer ${
-                  reward.available && rewards.currentCoins >= reward.coins
+                  reward.available && userData.ecoCoins >= reward.coins
                     ? "hover:shadow-lg border-gray-50 hover:border-green-100 hover:scale-[1.02]" 
                     : "opacity-60 border-gray-100 cursor-not-allowed"
                 } animate-slideInRight`}
@@ -235,13 +250,13 @@ export default function RewardsPage() {
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-900 mb-1">{reward.title}</h4>
                     <p className="text-sm text-gray-500">{reward.description}</p>
-                    {reward.available && rewards.currentCoins >= reward.coins && (
+                    {reward.available && userData.ecoCoins >= reward.coins && (
                       <p className="text-xs text-green-600 font-semibold mt-2">✓ Available to redeem</p>
                     )}
                   </div>
                   <div
                     className={`ml-4 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm ${
-                      reward.available && rewards.currentCoins >= reward.coins
+                      reward.available && userData.ecoCoins >= reward.coins
                         ? "bg-gradient-to-r from-[#34C759] to-[#2FB350] text-white"
                         : "bg-gray-100 text-gray-400"
                     }`}

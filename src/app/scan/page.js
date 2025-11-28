@@ -87,7 +87,7 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex flex-col">
+    <div className="min-h-screen max-w-sm mx-auto gradient-to-b from-gray-900 to-black flex flex-col">
       <Header title="Scan Waste" showBack={true} />
 
       {/* Camera View */}
@@ -199,7 +199,7 @@ export default function ScanPage() {
       </div>
 
       {!detected && (
-        <div className="p-8 bg-black/40 backdrop-blur-md absolute bottom-0 w-full z-10">
+        <div className="p-8 bg-black/40 backdrop-blur-md absolute max-w-sm mx-auto bottom-0 w-full z-10">
           <button
             onClick={handleScan}
             disabled={scanning}

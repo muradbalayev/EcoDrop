@@ -1,13 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Package, FileText, Box, Wine, Clock, MapPin, List, Map, TrendingUp } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ScanMap from "@/components/ScanMap";
-import { scanHistory } from "@/data/mockData";
+import { getScanHistory } from "@/utils/storage";
 
 export default function HistoryPage() {
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'map'
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    const data = getScanHistory();
+    setHistory(data);
+  }, []);
 
   const materialIcons = {
     Plastic: Package,
@@ -62,54 +68,60 @@ export default function HistoryPage() {
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Recent Scans</h2>
             <div className="flex items-center space-x-1.5 text-xs text-gray-500">
               <TrendingUp size={14} />
-              <span>{scanHistory.length} total</span>
+              <span>{history.length} total</span>
             </div>
           </div>
 
           <div className="space-y-3">
-            {scanHistory.map((scan, index) => {
-              const Icon = materialIcons[scan.materialType] || Package;
-              const colors = materialColors[scan.materialType] || materialColors.Plastic;
+            {history.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                No scans yet. Start scanning to see your history!
+              </div>
+            ) : (
+              history.map((scan, index) => {
+                const Icon = materialIcons[scan.materialType] || Package;
+                const colors = materialColors[scan.materialType] || materialColors.Plastic;
 
-              return (
-                <div
-                  key={scan.id}
-                  className="group bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-50 hover:border-green-100 animate-slideInRight"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-14 h-14 bg-gradient-to-br ${colors.bg} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
-                      <Icon size={28} className={colors.icon} strokeWidth={2} />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="font-bold text-gray-900">{scan.material}</h3>
-                        <span className={`px-2 py-0.5 ${colors.badge} ${colors.text} text-xs font-semibold rounded-full`}>
-                          {scan.confidence}%
-                        </span>
+                return (
+                  <div
+                    key={scan.id}
+                    className="group bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-50 hover:border-green-100 animate-slideInRight"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-14 h-14 bg-gradient-to-br ${colors.bg} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                        <Icon size={28} className={colors.icon} strokeWidth={2} />
                       </div>
-                      <div className="flex items-center space-x-3 text-xs text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <Clock size={12} />
-                          <span>{scan.time}</span>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="font-bold text-gray-900">{scan.material}</h3>
+                          <span className={`px-2 py-0.5 ${colors.badge} ${colors.text} text-xs font-semibold rounded-full`}>
+                            {scan.confidence}%
+                          </span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <MapPin size={12} />
-                          <span className="truncate">{scan.location}</span>
+                        <div className="flex items-center space-x-3 text-xs text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <Clock size={12} />
+                            <span>{scan.time}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <MapPin size={12} />
+                            <span className="truncate">{scan.location}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="text-right flex-shrink-0">
-                      <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                        <span className="text-lg">✓</span>
+                      <div className="text-right flex-shrink-0">
+                        <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
+                          <span className="text-lg">✓</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -122,13 +134,13 @@ export default function HistoryPage() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-gray-900">Scan Locations</h3>
                 <div className="text-xs text-gray-500 bg-green-50 px-3 py-1.5 rounded-full">
-                  {scanHistory.length} locations
+                  {history.length} locations
                 </div>
               </div>
               <p className="text-sm text-gray-600 mb-4">
                 Interactive map showing all your recycling scan locations in Bakı
               </p>
-              <ScanMap scans={scanHistory} />
+              <ScanMap scans={history} />
             </div>
           </div>
         </div>
