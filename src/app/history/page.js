@@ -1,10 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Package, FileText, Box, Wine, Clock, MapPin, List, Map, TrendingUp } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import ScanMap from "@/components/ScanMap";
 import { getScanHistory } from "@/utils/storage";
+
+// Dynamically import ScanMap to avoid SSR issues with Leaflet
+const ScanMap = dynamic(() => import("@/components/ScanMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[500px] rounded-3xl bg-gray-100 animate-pulse flex items-center justify-center">
+      <span className="text-gray-400">Loading map...</span>
+    </div>
+  ),
+});
 
 export default function HistoryPage() {
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'map'
