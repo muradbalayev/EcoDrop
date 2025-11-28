@@ -32,13 +32,22 @@ export const initializeStorage = () => {
 export const getUserData = () => {
   if (typeof window === 'undefined') return null;
   const data = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-  return data ? JSON.parse(data) : null;
+  
+  if (!data) {
+    initializeStorage();
+    const newData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+    return newData ? JSON.parse(newData) : null;
+  }
+  
+  return JSON.parse(data);
 };
 
 // Update user data
 export const updateUserData = (updates) => {
   if (typeof window === 'undefined') return;
-  const current = getUserData() || {};
+  const current = getUserData();
+  if (!current) return; // Safety check
+  
   const updated = { ...current, ...updates };
   localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updated));
   
@@ -69,6 +78,11 @@ export const getScanHistory = () => {
 export const addScan = (scan) => {
   if (typeof window === 'undefined') return;
   
+  // Ensure storage is initialized
+  if (!localStorage.getItem(STORAGE_KEYS.SCAN_HISTORY)) {
+    initializeStorage();
+  }
+  
   const history = getScanHistory();
   const newScan = {
     ...scan,
@@ -82,12 +96,15 @@ export const addScan = (scan) => {
   // Update user stats
   const co2PerMaterial = { Plastic: 0.5, Paper: 0.3, Metal: 0.8, Glass: 0.4 };
   const userData = getUserData();
-  const newCO2 = userData.co2Saved + (co2PerMaterial[scan.materialType] || 0.4);
   
-  updateUserData({
-    co2Saved: newCO2,
-    treesSaved: Math.floor(newCO2 / 7.5),
-  });
+  if (userData) {
+    const newCO2 = userData.co2Saved + (co2PerMaterial[scan.materialType] || 0.4);
+    
+    updateUserData({
+      co2Saved: newCO2,
+      treesSaved: Math.floor(newCO2 / 7.5),
+    });
+  }
   
   return newScan;
 };
